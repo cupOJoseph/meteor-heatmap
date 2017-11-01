@@ -25,15 +25,125 @@
 <body>
   <div id='map'></div>
   <script>
-    mapboxgl.accessToken = 'pk.eyJ1Ijoic2NoaWFyaXp6aSIsImEiOiJjajE4a3NuZWowNzQ5MzNvN2xkdGh2YnVwIn0.dOZQgGCs8Fwxpy7bmRvvTg';
+    mapboxgl.accessToken = 'pk.your map box public key goes here';
     var map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/mapbox/dark-v9',
-      center: [-79.999732, 40.4374],
-      zoom: 11
+      center: [68.730469, -27.371767],
+      zoom: 1
     });
 
-   // we will add more code here in the next steps
+    map.on('load', function() {
+
+   map.addSource('meteors', {
+     type: 'geojson',
+     data: './meteors.geojson'
+   });
+   map.addLayer({
+  id: 'meteor-heat',
+  type: 'heatmap',
+  source: 'meteors',
+  maxzoom: 7,
+  paint: {
+    // increase weight as diameter breast height increases
+    'heatmap-weight': {
+      property: 'mass',
+      type: 'exponential',
+      stops: [
+        [1, 0],
+        [62, 1]
+      ]
+    },
+    // increase intensity as zoom level increases
+    'heatmap-intensity': {
+      stops: [
+        [11, 1],
+        [15, 3]
+      ]
+    },
+    // assign color values be applied to points depending on their weight
+    'heatmap-color': {
+      stops: [
+        [0, 'rgba(245,227,127,0)'],
+        [0.2, '#f5e17f'],
+        [0.4, '#f5bf42'],
+        [0.6, '#f5970a'],
+        [0.8, '#e66a22'],
+        [1, '#d42c40']
+      ]
+    },
+    // increase radius as zoom increases
+    'heatmap-radius': {
+      stops: [
+        [11, 15],
+        [15, 20]
+      ]
+    },
+    // decrease opacity to transition into the circle layer
+    'heatmap-opacity': {
+      default: 1,
+      stops: [
+        [14, 1],
+        [15, 0]
+      ]
+    },
+  }
+}, 'waterway-label');
+
+
+
+   // add circle layer here
+   map.addLayer({
+  id: 'meteors-point',
+  type: 'circle',
+  source: 'meteors',
+  minzoom: 7,
+  paint: {
+    // increase the radius of the circle as the zoom level and mass value increases
+    'circle-radius': {
+      property: 'mass',
+      type: 'exponential',
+      stops: [
+        [{ zoom: 15, value: 1 }, 5],
+        [{ zoom: 15, value: 62 }, 50],
+        [{ zoom: 22, value: 1 }, 250],
+        [{ zoom: 22, value: 62 }, 1000],
+      ]
+    },
+    'circle-color': {
+      property: 'mass',
+      type: 'exponential',
+      stops: [
+        [0, 'rgba(236,222,239,0)'],
+        [10, '#ffffad'],
+        [30, '#f5e07a'],
+        [100, '#f5bf42'],
+        [250, '#f7b228'],
+        [500, '#e35f27'],
+        [10000, '#d93b3b']
+      ]
+    },
+    'circle-stroke-color': 'white',
+    'circle-stroke-width': 2,
+    'circle-opacity': {
+      stops: [
+        [14, 0],
+        [15, 1]
+      ]
+    }
+  }
+}, 'waterway-label');
+ });
+
+ map.on('click', 'meteors-point', function(e) {
+new mapboxgl.Popup()
+ .setLngLat(e.features[0].geometry.coordinates)
+ .setHTML(
+        '<b>Name: </b>' + e.features[0].properties.name +
+        '<br><b>Mass: </b> ' + e.features[0].properties.mass +
+        '<br><b>Year: </b>' + e.features[0].properties.year)
+ .addTo(map);
+});
 
   </script>
 </body>
